@@ -34,7 +34,6 @@ public:
                 i++;
                 if ((i < argc) && (argv[i][0] != '-')) {
                     run_macro = argv[i];
-                    std::cout << "Running Macro: " + run_macro << std::endl;
                     continue;
                 }
                 else {
@@ -90,7 +89,7 @@ int main(int argc, char* argv[], char* envp[])
 
     // Parse arguments
     CmdArgs args = CmdArgs(argc, argv);
-    args.list_args();
+    //args.list_args();
     if (!args.success || argc == 1) {
         print_usage();
         return -1;
@@ -114,7 +113,8 @@ int main(int argc, char* argv[], char* envp[])
     if (args.ip.size()) {
 
         BMDSwitcherConnectToFailure			failReason;
-        BSTR addressBstr = SysAllocStringByteLen(args.ip.c_str(), args.ip.size());
+        std::wstring ws(args.ip.begin(), args.ip.end());
+        BSTR addressBstr = SysAllocStringLen(ws.data(), ws.size());
 
         // Connect to the switcher
         // Note that ConnectTo() can take several seconds to return, both for success or failure,
@@ -143,7 +143,6 @@ int main(int argc, char* argv[], char* envp[])
             // Get list of macros
             IBMDSwitcherMacroPool* mMacroPool;
             const IID iMacroPool = IID_IBMDSwitcherMacroPool;
-            //mSwitcher->QueryInterface<IID_IBMDSwitcherMacroPool>(mMacroPool);
             mSwitcher->QueryInterface(IID_IBMDSwitcherMacroPool, (void**)&mMacroPool);
             uint32_t macro_count;
             BOOL macro_valid;
@@ -169,7 +168,8 @@ int main(int argc, char* argv[], char* envp[])
                         goto bail;
                     }
 
-                    std::cout << i << macro_name << macro_description << std::endl;
+                    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+                    std::cout << i << " " << converter.to_bytes(macro_name) << " " << converter.to_bytes(macro_description) << std::endl;
 
                     SysFreeString(macro_name);
                     SysFreeString(macro_description);
@@ -231,9 +231,11 @@ int main(int argc, char* argv[], char* envp[])
                     goto bail;
                 }
                 mMacroControl->Release();
+                // Delay for a second to make sure the command went through
+                Sleep(1000);
             }
             else {
-                std::cout << "ERROR: COuld not find macro " << args.run_macro << std::endl;
+                std::cout << "ERROR: Could not find macro " << args.run_macro << std::endl;
                 goto bail;
             }
 
@@ -251,14 +253,3 @@ int main(int argc, char* argv[], char* envp[])
 
     CoUninitialize();
 }
-
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
-
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
